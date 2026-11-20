@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente Académico</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f4fb;
+  color: #24304a;
+}
+header {
+  background: #263c70;
+  color: white;
+  text-align: center;
+  padding: 30px 15px;
+}
+header h1 { margin: 0 0 10px; }
+.container {
+  max-width: 900px;
+  margin: 25px auto;
+  padding: 15px;
+}
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+button {
+  background: #405c9b;
+  color: white;
+  border: none;
+  padding: 12px 17px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+button:hover { background: #263c70; }
+.card {
+  background: white;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 12px #00000010;
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 9px 0;
+  border: 1px solid #ccd3e1;
+  border-radius: 8px;
+}
+h2 { color: #263c70; }
+.item {
+  background: #f1f4fb;
+  padding: 13px;
+  border-radius: 9px;
+  margin: 10px 0;
+}
+.hidden { display: none; }
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #65718a;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>📚 Asistente de Seguimiento Académico</h1>
+<p>Organiza tus estudios, tareas y calificaciones</p>
+</header>
+
+<div class="container">
+
+<div class="menu">
+<button onclick="mostrar('inicio')">Inicio</button>
+<button onclick="mostrar('notas')">Mis notas</button>
+<button onclick="mostrar('tareas')">Mis tareas</button>
+<button onclick="mostrar('promedios')">Promedios</button>
+</div>
+
+<section id="inicio" class="card">
+<h2>¡Bienvenido!</h2>
+<p>Tu espacio para organizarte y mejorar tu rendimiento académico.</p>
+<p>Registra tus calificaciones, organiza tus tareas y consulta tus promedios.</p>
+<h3>Integrantes del proyecto</h3>
+<p>Ashley Cruz · Renata Villegas · Adriana Characayo</p>
+</section>
+
+<section id="notas" class="card hidden">
+<h2>📝 Registrar calificaciones</h2>
+<input id="materia" placeholder="Nombre de la materia">
+<input id="nota" type="number" min="0" max="100" placeholder="Nota de 0 a 100">
+<button onclick="agregarNota()">Guardar nota</button>
+<div id="listaNotas"></div>
+</section>
+
+<section id="tareas" class="card hidden">
+<h2>📅 Mis tareas</h2>
+<input id="nombreTarea" placeholder="Nombre de la tarea">
+<input id="materiaTarea" placeholder="Materia">
+<input id="fechaTarea" type="date">
+<button onclick="agregarTarea()">Agregar tarea</button>
+<div id="listaTareas"></div>
+</section>
+
+<section id="promedios" class="card hidden">
+<h2>📊 Mis promedios</h2>
+<div id="listaPromedios"></div>
+</section>
+
+</div>
+
+<footer>
+Proyecto escolar · Asistente de Seguimiento Académico
+</footer>
+
+<script>
+let notas = JSON.parse(localStorage.getItem("notas") || "[]");
+let tareas = JSON.parse(localStorage.getItem("tareas") || "[]");
+
+function guardar() {
+  localStorage.setItem("notas", JSON.stringify(notas));
+  localStorage.setItem("tareas", JSON.stringify(tareas));
+}
+
+function mostrar(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  if (id === "notas") verNotas();
+  if (id === "tareas") verTareas();
+  if (id === "promedios") calcularPromedios();
+}
+
+function agregarNota() {
+  let materia = document.getElementById("materia").value.trim();
+  let valor = document.getElementById("nota").value;
+  let nota = Number(valor);
+
+  if (!materia || valor === "" || nota < 0 || nota > 100) {
+    alert("Ingresa una materia y una nota válida de 0 a 100.");
+    return;
+  }
+
+  notas.push({materia, nota});
+  guardar();
+  document.getElementById("materia").value = "";
+  document.getElementById("nota").value = "";
+  verNotas();
+  alert("¡Nota registrada correctamente!");
+}
+
+function verNotas() {
+  document.getElementById("listaNotas").innerHTML = "";
+  notas.forEach((n, i) => {
+    let div = document.createElement("div");
+    div.className = "item";
+    div.textContent = n.materia + ": " + n.nota + "/100 ";
+
+    let boton = document.createElement("button");
+    boton.textContent = "Eliminar";
+    boton.onclick = () => {
+      notas.splice(i, 1);
+      guardar();
+      verNotas();
+    };
+
+    div.appendChild(boton);
+    document.getElementById("listaNotas").appendChild(div);
+  });
+}
+
+function calcularPromedios() {
+  let grupos = {};
+
+  notas.forEach(n => {
+    if (!grupos[n.materia]) grupos[n.materia] = [];
+    grupos[n.materia].push(n.nota);
+  });
+
+  let contenedor = document.getElementById("listaPromedios");
+  contenedor.innerHTML = "";
+
+  if (Object.keys(grupos).length === 0) {
+    contenedor.textContent = "Todavía no hay notas registradas.";
+    return;
+  }
+
+  Object.entries(grupos).forEach(([materia, valores]) => {
+    let promedio = valores.reduce((a,b) => a+b, 0) / valores.length;
+    let div = document.createElement("div");
+    div.className = "item";
+    div.textContent = materia + ": " + promedio.toFixed(2) +
+      "/100 — " + (promedio < 60 ? "⚠️ Necesitas reforzar esta materia." : "✅ ¡Buen trabajo!");
+    contenedor.appendChild(div);
+  });
+}
+
+function agregarTarea() {
+  let nombre = document.getElementById("nombreTarea").value.trim();
+  let materia = document.getElementById("materiaTarea").value.trim();
+  let fecha = document.getElementById("fechaTarea").value;
+
+  if (!nombre || !materia || !fecha) {
+    alert("Completa todos los datos de la tarea.");
+    return;
+  }
+
+  tareas.push({nombre, materia, fecha, completada:false});
+  guardar();
+
+  document.getElementById("nombreTarea").value = "";
+  document.getElementById("materiaTarea").value = "";
+  document.getElementById("fechaTarea").value = "";
+
+  verTareas();
+  alert("¡Tarea agregada correctamente!");
+}
+
+function verTareas() {
+  let contenedor = document.getElementById("listaTareas");
+  contenedor.innerHTML = "";
+
+  tareas.forEach((t, i) => {
+    let div = document.createElement("div");
+    div.className = "item";
+
+    let info = document.createElement("p");
+    info.textContent = t.nombre + " — " + t.materia +
+      " | Entrega: " + t.fecha +
+      " | Estado: " + (t.completada ? "Completada" : "Pendiente");
+    div.appendChild(info);
+
+    let completar = document.createElement("button");
+    completar.textContent = "Completar";
+    completar.onclick = () => {
+      tareas[i].completada = true;
+      guardar();
+      verTareas();
+    };
+    div.appendChild(completar);
+
+    let eliminar = document.createElement("button");
+    eliminar.textContent = "Eliminar";
+    eliminar.style.marginLeft = "8px";
+    eliminar.onclick = () => {
+      tareas.splice(i, 1);
+      guardar();
+      verTareas();
+    };
+    div.appendChild(eliminar);
+
+    contenedor.appendChild(div);
+  });
+}
+
+verNotas();
+verTareas();
+</script>
+
+</body>
+</html>
